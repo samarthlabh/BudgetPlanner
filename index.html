@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Budget Planner</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --primary: #059669;
+      --primary-dark: #047857;
+      --bg: #f0fdf4;
+      --surface: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); padding: 2rem 1rem; display: flex; justify-content: center; }
+    .container { width: 100%; max-width: 960px; }
+    header { text-align: center; margin-bottom: 2rem; }
+    header h1 { color: var(--primary); font-size: 2rem; margin-bottom: 0.25rem; }
+    .grid-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .stat-card h3 { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; }
+    .stat-card .val { font-size: 1.4rem; font-weight: 700; margin-top: 0.25rem; }
+    .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    @media (max-width: 768px) { .main-grid { grid-template-columns: 1fr; } }
+    .form-group { margin-bottom: 0.9rem; }
+    label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.3rem; }
+    input, select, button { width: 100%; padding: 0.6rem 0.75rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; }
+    input:focus, select:focus { outline: 2px solid var(--primary); border-color: transparent; }
+    button.btn-primary { background: var(--primary); color: #fff; border: none; font-weight: 600; cursor: pointer; }
+    button.btn-primary:hover { background: var(--primary-dark); }
+    button.btn-outline { background: transparent; border: 1px solid var(--border); cursor: pointer; font-weight: 500; }
+    button.btn-outline:hover { background: #f8fafc; }
+    .progress-bar { background: var(--border); height: 8px; border-radius: 4px; overflow: hidden; margin-top: 0.4rem; }
+    .progress-fill { background: var(--primary); height: 100%; width: 0%; transition: width 0.3s; }
+    .tx-list { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; max-height: 280px; overflow-y: auto; }
+    .tx-item { display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0.75rem; border: 1px solid var(--border); border-radius: 6px; }
+    .del-btn { background: none; border: none; color: var(--text-muted); font-size: 1.1rem; cursor: pointer; width: auto; }
+    .del-btn:hover { color: var(--danger); }
+    .chart-box { position: relative; height: 220px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Budget Planner</h1>
+      <p style="color: var(--text-muted);">Track income, control spending, and achieve savings targets</p>
+    </header>
+
+    <div class="grid-stats">
+      <div class="card stat-card">
+        <h3>Total Income</h3>
+        <div class="val" id="incomeDisplay" style="color: var(--primary);">₹0.00</div>
+      </div>
+      <div class="card stat-card">
+        <h3>Total Expenses</h3>
+        <div class="val" id="expenseDisplay" style="color: var(--danger);">₹0.00</div>
+      </div>
+      <div class="card stat-card">
+        <h3>Net Balance</h3>
+        <div class="val" id="balanceDisplay">₹0.00</div>
+      </div>
+      <div class="card stat-card">
+        <h3>Savings Goal Progress</h3>
+        <div class="val" id="goalTargetDisplay">₹0 / ₹500</div>
+        <div class="progress-bar"><div id="goalProgressBar" class="progress-fill"></div></div>
+      </div>
+    </div>
+
+    <div class="main-grid">
+      <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+        <div class="card">
+          <h2 style="font-size: 1.1rem; margin-bottom: 1rem;">Add Entry</h2>
+          <form id="entryForm">
+            <div class="form-group">
+              <label>Description</label>
+              <input type="text" id="entryDesc" placeholder="e.g., Salary, Rent, Groceries" required />
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+              <div class="form-group">
+                <label>Amount (₹)</label>
+                <input type="number" id="entryAmount" step="0.01" min="0.01" required />
+              </div>
+              <div class="form-group">
+                <label>Type</label>
+                <select id="entryType" onchange="adjustCategoryOptions()">
+                  <option value="Expense">Expense</option>
+                  <option value="Income">Income</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Category</label>
+              <select id="entryCategory"></select>
+            </div>
+            <button type="submit" class="btn-primary">Add Entry</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <h2 style="font-size: 1.1rem; margin-bottom: 1rem;">Update Savings Goal</h2>
+          <div style="display: flex; gap: 0.5rem;">
+            <input type="number" id="goalInput" placeholder="Monthly Goal (₹)" />
+            <button type="button" class="btn-outline" style="width: auto;" onclick="setSavingsGoal()">Set</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+        <div class="card">
+          <h2 style="font-size: 1.1rem; margin-bottom: 0.5rem;">Expenditure Breakdown</h2>
+          <div class="chart-box"><canvas id="budgetChart"></canvas></div>
+        </div>
+
+        <div class="card" style="flex: 1;">
+          <h2 style="font-size: 1.1rem; margin-bottom: 0.75rem;">Recent Records</h2>
+          <ul id="recordsList" class="tx-list"></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const expCategories = ["Housing & Rent", "Groceries & Food", "Utilities", "Entertainment", "Transit"];
+    const incCategories = ["Salary", "Investments", "Freelance", "Other"];
+    
+    let records = JSON.parse(localStorage.getItem("bp_records")) || [];
+    let savingsGoal = parseFloat(localStorage.getItem("bp_goal")) || 500;
+    let chartInstance = null;
+
+    function adjustCategoryOptions() {
+      const type = document.getElementById("entryType").value;
+      const catSelect = document.getElementById("entryCategory");
+      const list = type === "Expense" ? expCategories : incCategories;
+      catSelect.innerHTML = list.map(c => `<option value="${c}">${c}</option>`).join("");
+    }
+
+    function setSavingsGoal() {
+      const val = parseFloat(document.getElementById("goalInput").value);
+      if (!isNaN(val) && val > 0) {
+        savingsGoal = val;
+        localStorage.setItem("bp_goal", savingsGoal.toString());
+        render();
+      }
+    }
+
+    function deleteRecord(id) {
+      records = records.filter(r => r.id !== id);
+      localStorage.setItem("bp_records", JSON.stringify(records));
+      render();
+    }
+
+    document.getElementById("entryForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const newRec = {
+        id: Date.now(),
+        desc: document.getElementById("entryDesc").value.trim(),
+        amount: parseFloat(document.getElementById("entryAmount").value),
+        type: document.getElementById("entryType").value,
+        category: document.getElementById("entryCategory").value,
+        date: new Date().toISOString().split("T")[0]
+      };
+      records.unshift(newRec);
+      localStorage.setItem("bp_records", JSON.stringify(records));
+      document.getElementById("entryDesc").value = "";
+      document.getElementById("entryAmount").value = "";
+      render();
+    });
+
+    function render() {
+      const incTotal = records.filter(r => r.type === "Income").reduce((s, r) => s + r.amount, 0);
+      const expTotal = records.filter(r => r.type === "Expense").reduce((s, r) => s + r.amount, 0);
+      const balance = incTotal - expTotal;
+
+      document.getElementById("incomeDisplay").textContent = `₹${incTotal.toFixed(2)}`;
+      document.getElementById("expenseDisplay").textContent = `₹${expTotal.toFixed(2)}`;
+      document.getElementById("balanceDisplay").textContent = `₹${balance.toFixed(2)}`;
+      document.getElementById("goalTargetDisplay").textContent = `₹${Math.max(0, balance).toFixed(0)} / ₹${savingsGoal.toFixed(0)}`;
+
+      const goalPct = Math.min(Math.max((balance / savingsGoal) * 100, 0), 100);
+      document.getElementById("goalProgressBar").style.width = `${goalPct}%`;
+
+      const list = document.getElementById("recordsList");
+      list.innerHTML = records.length ? "" : `<li style="text-align: center; color: var(--text-muted); padding: 1rem;">No entries logged.</li>`;
+      records.forEach(r => {
+        const li = document.createElement("li");
+        li.className = "tx-item";
+        li.innerHTML = `
+          <div>
+            <span style="font-weight: 600;">${r.desc}</span>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">${r.category} &bull; ${r.date}</div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span style="font-weight: 700; color: ${r.type === 'Income' ? 'var(--primary)' : 'var(--danger)'};">
+              ${r.type === 'Income' ? '+' : '-'}₹${r.amount.toFixed(2)}
+            </span>
+            <button class="del-btn" onclick="deleteRecord(${r.id})">&times;</button>
+          </div>
+        `;
+        list.appendChild(li);
+      });
+
+      renderChart();
+    }
+
+    function renderChart() {
+      const data = expCategories.map(cat => 
+        records.filter(r => r.type === "Expense" && r.category === cat).reduce((s, r) => s + r.amount, 0)
+      );
+      const ctx = document.getElementById("budgetChart").getContext("2d");
+      if (chartInstance) chartInstance.destroy();
+      chartInstance = new Chart(ctx, {
+        type: "doughnut",
+        data: {
+          labels: expCategories,
+          datasets: [{ data, backgroundColor: ["#10b981", "#3b82f6", "#f59e0b", "#8b5cf6", "#ec4899"], borderWidth: 1 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "bottom", labels: { boxWidth: 10, font: { size: 10 } } } } }
+      });
+    }
+
+    adjustCategoryOptions();
+    render();
+  </script>
+</body>
+</html>
