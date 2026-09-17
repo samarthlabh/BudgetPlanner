@@ -18,10 +18,12 @@
       --warning: #f59e0b;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background-color: var(--bg); color: var(--text); padding: 2rem 1rem; display: flex; justify-content: center; }
+    body { background-color: var(--bg); color: var(--text); padding: 2rem 1rem; display: flex; justify-content: center; min-height: 100vh; }
     .container { width: 100%; max-width: 960px; }
-    header { text-align: center; margin-bottom: 2rem; }
+    .auth-container { width: 100%; max-width: 400px; margin: auto; }
+    header { text-align: center; margin-bottom: 2rem; position: relative; }
     header h1 { color: var(--primary); font-size: 2rem; margin-bottom: 0.25rem; }
+    .user-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; background: var(--surface); padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid var(--border); }
     .grid-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
     .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
     .stat-card h3 { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; }
@@ -36,6 +38,8 @@
     button.btn-primary:hover { background: var(--primary-dark); }
     button.btn-outline { background: transparent; border: 1px solid var(--border); cursor: pointer; font-weight: 500; }
     button.btn-outline:hover { background: #f8fafc; }
+    button.btn-danger { background: transparent; border: 1px solid var(--danger); color: var(--danger); cursor: pointer; font-weight: 600; width: auto; padding: 0.4rem 0.8rem; }
+    button.btn-danger:hover { background: var(--danger); color: #fff; }
     .progress-bar { background: var(--border); height: 8px; border-radius: 4px; overflow: hidden; margin-top: 0.4rem; }
     .progress-fill { background: var(--primary); height: 100%; width: 0%; transition: width 0.3s; }
     .tx-list { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; max-height: 280px; overflow-y: auto; }
@@ -43,10 +47,50 @@
     .del-btn { background: none; border: none; color: var(--text-muted); font-size: 1.1rem; cursor: pointer; width: auto; }
     .del-btn:hover { color: var(--danger); }
     .chart-box { position: relative; height: 220px; }
+    .auth-tabs { display: flex; gap: 0.5rem; margin-bottom: 1.25rem; }
+    .auth-tab { flex: 1; padding: 0.5rem; text-align: center; border: 1px solid var(--border); background: var(--surface); border-radius: 6px; cursor: pointer; font-weight: 600; }
+    .auth-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .error-msg { color: var(--danger); font-size: 0.85rem; margin-top: 0.5rem; text-align: center; }
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
-  <div class="container">
+
+  <!-- Auth Screen -->
+  <div id="authSection" class="auth-container">
+    <header>
+      <h1>Budget Planner</h1>
+      <p style="color: var(--text-muted);">Sign in to manage your finances</p>
+    </header>
+
+    <div class="card">
+      <div class="auth-tabs">
+        <div id="tabLogin" class="auth-tab active" onclick="switchAuthMode('login')">Login</div>
+        <div id="tabSignup" class="auth-tab" onclick="switchAuthMode('signup')">Sign Up</div>
+      </div>
+
+      <form id="authForm">
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" id="authUsername" placeholder="e.g., samarth" required />
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="authPassword" placeholder="••••••••" required />
+        </div>
+        <button type="submit" id="authSubmitBtn" class="btn-primary">Log In</button>
+        <div id="authError" class="error-msg"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Main App Screen -->
+  <div id="appSection" class="container hidden">
+    <div class="user-bar">
+      <div>Signed in as: <strong id="currentUserLabel" style="color: var(--primary);"></strong></div>
+      <button class="btn-danger" onclick="logout()">Sign Out</button>
+    </div>
+
     <header>
       <h1>Budget Planner</h1>
       <p style="color: var(--text-muted);">Track income, control spending, and achieve savings targets</p>
@@ -128,10 +172,88 @@
   <script>
     const expCategories = ["Housing & Rent", "Groceries & Food", "Utilities", "Entertainment", "Transit"];
     const incCategories = ["Salary", "Investments", "Freelance", "Other"];
-    
-    let records = JSON.parse(localStorage.getItem("bp_records")) || [];
-    let savingsGoal = parseFloat(localStorage.getItem("bp_goal")) || 500;
+
+    let currentMode = "login";
+    let currentUser = localStorage.getItem("bp_active_user");
+    let records = [];
+    let savingsGoal = 500;
     let chartInstance = null;
+
+    // --- Authentication Logic ---
+    function switchAuthMode(mode) {
+      currentMode = mode;
+      document.getElementById("authError").textContent = "";
+      if (mode === "login") {
+        document.getElementById("tabLogin").classList.add("active");
+        document.getElementById("tabSignup").classList.remove("active");
+        document.getElementById("authSubmitBtn").textContent = "Log In";
+      } else {
+        document.getElementById("tabSignup").classList.add("active");
+        document.getElementById("tabLogin").classList.remove("active");
+        document.getElementById("authSubmitBtn").textContent = "Create Account";
+      }
+    }
+
+    document.getElementById("authForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const u = document.getElementById("authUsername").value.trim().toLowerCase();
+      const p = document.getElementById("authPassword").value.trim();
+      const err = document.getElementById("authError");
+      const users = JSON.parse(localStorage.getItem("bp_users")) || [];
+
+      if (currentMode === "signup") {
+        if (users.find(x => x.username === u)) {
+          err.textContent = "Username already exists. Please pick another.";
+          return;
+        }
+        users.push({ username: u, password: p });
+        localStorage.setItem("bp_users", JSON.stringify(users));
+        loginUser(u);
+      } else {
+        const found = users.find(x => x.username === u && x.password === p);
+        if (!found) {
+          err.textContent = "Invalid username or password.";
+          return;
+        }
+        loginUser(u);
+      }
+    });
+
+    function loginUser(username) {
+      currentUser = username;
+      localStorage.setItem("bp_active_user", username);
+      document.getElementById("authUsername").value = "";
+      document.getElementById("authPassword").value = "";
+      document.getElementById("authError").textContent = "";
+      initApp();
+    }
+
+    function logout() {
+      localStorage.removeItem("bp_active_user");
+      currentUser = null;
+      if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+      initApp();
+    }
+
+    // --- App Lifecycle ---
+    function initApp() {
+      if (!currentUser) {
+        document.getElementById("authSection").classList.remove("hidden");
+        document.getElementById("appSection").classList.add("hidden");
+        return;
+      }
+
+      document.getElementById("authSection").classList.add("hidden");
+      document.getElementById("appSection").classList.remove("hidden");
+      document.getElementById("currentUserLabel").textContent = currentUser;
+
+      // Load user-specific data
+      records = JSON.parse(localStorage.getItem(`bp_records_${currentUser}`)) || [];
+      savingsGoal = parseFloat(localStorage.getItem(`bp_goal_${currentUser}`)) || 500;
+
+      adjustCategoryOptions();
+      render();
+    }
 
     function adjustCategoryOptions() {
       const type = document.getElementById("entryType").value;
@@ -144,14 +266,14 @@
       const val = parseFloat(document.getElementById("goalInput").value);
       if (!isNaN(val) && val > 0) {
         savingsGoal = val;
-        localStorage.setItem("bp_goal", savingsGoal.toString());
+        localStorage.setItem(`bp_goal_${currentUser}`, savingsGoal.toString());
         render();
       }
     }
 
     function deleteRecord(id) {
       records = records.filter(r => r.id !== id);
-      localStorage.setItem("bp_records", JSON.stringify(records));
+      localStorage.setItem(`bp_records_${currentUser}`, JSON.stringify(records));
       render();
     }
 
@@ -166,7 +288,7 @@
         date: new Date().toISOString().split("T")[0]
       };
       records.unshift(newRec);
-      localStorage.setItem("bp_records", JSON.stringify(records));
+      localStorage.setItem(`bp_records_${currentUser}`, JSON.stringify(records));
       document.getElementById("entryDesc").value = "";
       document.getElementById("entryAmount").value = "";
       render();
@@ -224,8 +346,7 @@
       });
     }
 
-    adjustCategoryOptions();
-    render();
+    initApp();
   </script>
 </body>
 </html>
