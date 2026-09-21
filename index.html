@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Budget Planner</title>
+  <title>Smart Budget Planner - SDC Review 1</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     :root {
@@ -16,37 +16,73 @@
       --border: #e2e8f0;
       --danger: #ef4444;
       --warning: #f59e0b;
+      --admin: #6366f1;
+      --admin-dark: #4f46e5;
     }
+
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background-color: var(--bg); color: var(--text); padding: 2rem 1rem; display: flex; justify-content: center; min-height: 100vh; }
-    .container { width: 100%; max-width: 960px; }
-    .auth-container { width: 100%; max-width: 400px; margin: auto; }
-    header { text-align: center; margin-bottom: 2rem; position: relative; }
+    .container { width: 100%; max-width: 1024px; }
+    .auth-container { width: 100%; max-width: 420px; margin: auto; }
+    
+    header { text-align: center; margin-bottom: 1.75rem; }
     header h1 { color: var(--primary); font-size: 2rem; margin-bottom: 0.25rem; }
-    .user-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; background: var(--surface); padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid var(--border); }
-    .grid-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    
+    /* Flexbox Navigati     display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      margin-bottom: 1.5rem; 
+      background: var(--surface); 
+      padding: 0.75rem 1.25rem; 
+      border-radius: 8px; 
+      border: 1px solid var(--border); 
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .user-tag { display: flex; align-items: center; gap: 0.5rem; font-size: 0.95rem; }
+    .badge { padding: 0.2rem 0.6rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
+    .badge-user { background: #d1fae5; color: var(--primary-dark); }
+    .badge-admin { background: #e0e7ff; color: var(--admin-dark); }
+
+    /* CSS Grid Layouts */
+    .grid-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    @media (max-width: 768px) { .main-grid { grid-template-columns: 1fr; } }
+
+    /* UI Cards */
     .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
     .stat-card h3 { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; }
     .stat-card .val { font-size: 1.4rem; font-weight: 700; margin-top: 0.25rem; }
-    .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
-    @media (max-width: 768px) { .main-grid { grid-template-columns: 1fr; } }
+    
     .form-group { margin-bottom: 0.9rem; }
     label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.3rem; }
     input, select, button { width: 100%; padding: 0.6rem 0.75rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; }
     input:focus, select:focus { outline: 2px solid var(--primary); border-color: transparent; }
+
+    /* Buttons */
     button.btn-primary { background: var(--primary); color: #fff; border: none; font-weight: 600; cursor: pointer; }
     button.btn-primary:hover { background: var(--primary-dark); }
     button.btn-outline { background: transparent; border: 1px solid var(--border); cursor: pointer; font-weight: 500; }
     button.btn-outline:hover { background: #f8fafc; }
     button.btn-danger { background: transparent; border: 1px solid var(--danger); color: var(--danger); cursor: pointer; font-weight: 600; width: auto; padding: 0.4rem 0.8rem; }
     button.btn-danger:hover { background: var(--danger); color: #fff; }
+    
+    /* Progress bar */
     .progress-bar { background: var(--border); height: 8px; border-radius: 4px; overflow: hidden; margin-top: 0.4rem; }
     .progress-fill { background: var(--primary); height: 100%; width: 0%; transition: width 0.3s; }
+    
+    /* Lists & Tables */
     .tx-list { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; max-height: 280px; overflow-y: auto; }
     .tx-item { display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0.75rem; border: 1px solid var(--border); border-radius: 6px; }
     .del-btn { background: none; border: none; color: var(--text-muted); font-size: 1.1rem; cursor: pointer; width: auto; }
     .del-btn:hover { color: var(--danger); }
     .chart-box { position: relative; height: 220px; }
+
+    /* Tables for Admin View */
+    table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; font-size: 0.9rem; }
+    th, td { padding: 0.6rem 0.75rem; text-align: left; border-bottom: 1px solid var(--border); }
+    th { background: #f8fafc; color: var(--text-muted); font-weight: 600; }
+
+    /* Auth Switcher */
     .auth-tabs { display: flex; gap: 0.5rem; margin-bottom: 1.25rem; }
     .auth-tab { flex: 1; padding: 0.5rem; text-align: center; border: 1px solid var(--border); background: var(--surface); border-radius: 6px; cursor: pointer; font-weight: 600; }
     .auth-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
@@ -56,11 +92,11 @@
 </head>
 <body>
 
-  <!-- Auth Screen -->
+  <!-- ================= AUTHENTICATION VIEW ================= -->
   <div id="authSection" class="auth-container">
     <header>
       <h1>Budget Planner</h1>
-      <p style="color: var(--text-muted);">Sign in to manage your finances</p>
+      <p style="color: var(--text-muted);">Sign in to your account</p>
     </header>
 
     <div class="card">
@@ -72,7 +108,7 @@
       <form id="authForm">
         <div class="form-group">
           <label>Username</label>
-          <input type="text" id="authUsername" placeholder="e.g., samarth" required />
+          <input type="text" id="authUsername" placeholder="Enter username" required />
         </div>
         <div class="form-group">
           <label>Password</label>
@@ -84,16 +120,19 @@
     </div>
   </div>
 
-  <!-- Main App Screen -->
-  <div id="appSection" class="container hidden">
-    <div class="user-bar">
-      <div>Signed in as: <strong id="currentUserLabel" style="color: var(--primary);"></strong></div>
+  <!-- ================= USER MODULE VIEW ================= -->
+  <div id="userModuleSection" class="container hidden">
+    <div class="nav-bar">
+      <div class="user-tag">
+        <span>Logged in as: <strong id="userNavName"></strong></span>
+        <span class="badge badge-user">User Module</span>
+      </div>
       <button class="btn-danger" onclick="logout()">Sign Out</button>
     </div>
 
     <header>
-      <h1>Budget Planner</h1>
-      <p style="color: var(--text-muted);">Track income, control spending, and achieve savings targets</p>
+      <h1>Personal Budget Dashboard</h1>
+      <p style="color: var(--text-muted);">Log transactions, review categorical trends, and monitor savings</p>
     </header>
 
     <div class="grid-stats">
@@ -169,19 +208,113 @@
     </div>
   </div>
 
+  <!-- ================= ADMIN MODULE VIEW ================= -->
+  <div id="adminModuleSection" class="container hidden">
+    <div class="nav-bar">
+      <div class="user-tag">
+        <span>Logged in as: <strong id="adminNavName"></strong></span>
+        <span class="badge badge-admin">Admin Module</span>
+      </div>
+      <button class="btn-danger" onclick="logout()">Sign Out</button>
+    </div>
+
+    <header>
+      <h1 style="color: var(--admin);">System Administration Panel</h1>
+      <p style="color: var(--text-muted);">Monitor registered accounts, aggregate volume, and global platform state</p>
+    </header>
+
+    <div class="grid-stats">
+      <div class="card stat-card">
+        <h3>Total Registered Users</h3>
+        <div class="val" id="adminTotalUsers" style="color: var(--admin);">0</div>
+      </div>
+      <div class="card stat-card">
+        <h3>System Total Transactions</h3>
+        <div class="val" id="adminTotalTx">0</div>
+      </div>
+      <div class="card stat-card">
+        <h3>System Cash Flow Logged</h3>
+        <div class="val" id="adminTotalVolume" style="color: var(--primary);">₹0.00</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="font-size: 1.1rem; margin-bottom: 0.75rem;">User Directory & Data Management</h2>
+      <div style="overflow-x: auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Username</th>
+              <th>Role</th>
+              <th>Logged Records</th>
+              <th>Net Balance</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="adminUserTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= JAVASCRIPT LOGIC ================= -->
   <script>
     const expCategories = ["Housing & Rent", "Groceries & Food", "Utilities", "Entertainment", "Transit"];
     const incCategories = ["Salary", "Investments", "Freelance", "Other"];
 
-    let currentMode = "login";
-    let currentUser = localStorage.getItem("bp_active_user");
+    let currentAuthMode = "login";
+    let activeSession = JSON.parse(localStorage.getItem("bp_session")) || null;
     let records = [];
     let savingsGoal = 500;
     let chartInstance = null;
 
-    // --- Authentication Logic ---
+    // Fixed single admin setup
+    function initSeedData() {
+      let users = JSON.parse(localStorage.getItem("bp_users")) || [];
+      // Ensure the default admin exists with username: admin, password: admin
+      const adminExists = users.some(u => u.username === "admin");
+      if (!adminExists) {
+        users.push({ username: "admin", password: "admin", role: "admin" });
+        localStorage.setItem("bp_users", JSON.stringify(users));
+      }
+    }
+
+    // --- Module Navigation Engine ---
+    function navigateToModule() {
+      const authSec = document.getElementById("authSection");
+      const userSec = document.getElementById("userModuleSection");
+      const adminSec = document.getElementById("adminModuleSection");
+
+      if (!activeSession) {
+        authSec.classList.remove("hidden");
+        userSec.classList.add("hidden");
+        adminSec.classList.add("hidden");
+        return;
+      }
+
+      authSec.classList.add("hidden");
+
+      if (activeSession.role === "admin") {
+        userSec.classList.add("hidden");
+        adminSec.classList.remove("hidden");
+        document.getElementById("adminNavName").textContent = activeSession.username;
+        renderAdminDashboard();
+      } else {
+        adminSec.classList.add("hidden");
+        userSec.classList.remove("hidden");
+        document.getElementById("userNavName").textContent = activeSession.username;
+        
+        // Hydrate current user state
+        records = JSON.parse(localStorage.getItem(`bp_records_${activeSession.username}`)) || [];
+        savingsGoal = parseFloat(localStorage.getItem(`bp_goal_${activeSession.username}`)) || 500;
+        adjustCategoryOptions();
+        renderUserDashboard();
+      }
+    }
+
+    // --- Authentication Flow ---
     function switchAuthMode(mode) {
-      currentMode = mode;
+      currentAuthMode = mode;
       document.getElementById("authError").textContent = "";
       if (mode === "login") {
         document.getElementById("tabLogin").classList.add("active");
@@ -201,60 +334,43 @@
       const err = document.getElementById("authError");
       const users = JSON.parse(localStorage.getItem("bp_users")) || [];
 
-      if (currentMode === "signup") {
-        if (users.find(x => x.username === u)) {
-          err.textContent = "Username already exists. Please pick another.";
+      if (currentAuthMode === "signup") {
+        if (u === "admin" || users.find(x => x.username === u)) {
+          err.textContent = "Username already exists. Choose another.";
           return;
         }
-        users.push({ username: u, password: p });
+        // Anyone signing up is automatically assigned the "user" role
+        const newUser = { username: u, password: p, role: "user" };
+        users.push(newUser);
         localStorage.setItem("bp_users", JSON.stringify(users));
-        loginUser(u);
+        setSession(newUser);
       } else {
         const found = users.find(x => x.username === u && x.password === p);
         if (!found) {
           err.textContent = "Invalid username or password.";
           return;
         }
-        loginUser(u);
+        setSession(found);
       }
     });
 
-    function loginUser(username) {
-      currentUser = username;
-      localStorage.setItem("bp_active_user", username);
+    function setSession(user) {
+      activeSession = { username: user.username, role: user.role };
+      localStorage.setItem("bp_session", JSON.stringify(activeSession));
       document.getElementById("authUsername").value = "";
       document.getElementById("authPassword").value = "";
       document.getElementById("authError").textContent = "";
-      initApp();
+      navigateToModule();
     }
 
     function logout() {
-      localStorage.removeItem("bp_active_user");
-      currentUser = null;
+      localStorage.removeItem("bp_session");
+      activeSession = null;
       if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
-      initApp();
+      navigateToModule();
     }
 
-    // --- App Lifecycle ---
-    function initApp() {
-      if (!currentUser) {
-        document.getElementById("authSection").classList.remove("hidden");
-        document.getElementById("appSection").classList.add("hidden");
-        return;
-      }
-
-      document.getElementById("authSection").classList.add("hidden");
-      document.getElementById("appSection").classList.remove("hidden");
-      document.getElementById("currentUserLabel").textContent = currentUser;
-
-      // Load user-specific data
-      records = JSON.parse(localStorage.getItem(`bp_records_${currentUser}`)) || [];
-      savingsGoal = parseFloat(localStorage.getItem(`bp_goal_${currentUser}`)) || 500;
-
-      adjustCategoryOptions();
-      render();
-    }
-
+    // --- User Module Operations ---
     function adjustCategoryOptions() {
       const type = document.getElementById("entryType").value;
       const catSelect = document.getElementById("entryCategory");
@@ -266,15 +382,15 @@
       const val = parseFloat(document.getElementById("goalInput").value);
       if (!isNaN(val) && val > 0) {
         savingsGoal = val;
-        localStorage.setItem(`bp_goal_${currentUser}`, savingsGoal.toString());
-        render();
+        localStorage.setItem(`bp_goal_${activeSession.username}`, savingsGoal.toString());
+        renderUserDashboard();
       }
     }
 
     function deleteRecord(id) {
       records = records.filter(r => r.id !== id);
-      localStorage.setItem(`bp_records_${currentUser}`, JSON.stringify(records));
-      render();
+      localStorage.setItem(`bp_records_${activeSession.username}`, JSON.stringify(records));
+      renderUserDashboard();
     }
 
     document.getElementById("entryForm").addEventListener("submit", (e) => {
@@ -288,13 +404,13 @@
         date: new Date().toISOString().split("T")[0]
       };
       records.unshift(newRec);
-      localStorage.setItem(`bp_records_${currentUser}`, JSON.stringify(records));
+      localStorage.setItem(`bp_records_${activeSession.username}`, JSON.stringify(records));
       document.getElementById("entryDesc").value = "";
       document.getElementById("entryAmount").value = "";
-      render();
+      renderUserDashboard();
     });
 
-    function render() {
+    function renderUserDashboard() {
       const incTotal = records.filter(r => r.type === "Income").reduce((s, r) => s + r.amount, 0);
       const expTotal = records.filter(r => r.type === "Expense").reduce((s, r) => s + r.amount, 0);
       const balance = incTotal - expTotal;
@@ -346,7 +462,55 @@
       });
     }
 
-    initApp();
+    // --- Admin Module Operations ---
+    function renderAdminDashboard() {
+      const users = JSON.parse(localStorage.getItem("bp_users")) || [];
+      document.getElementById("adminTotalUsers").textContent = users.length;
+
+      let totalTxCount = 0;
+      let totalVolume = 0;
+      const tbody = document.getElementById("adminUserTableBody");
+      tbody.innerHTML = "";
+
+      users.forEach(u => {
+        const userRecs = JSON.parse(localStorage.getItem(`bp_records_${u.username}`)) || [];
+        totalTxCount += userRecs.length;
+
+        const inc = userRecs.filter(r => r.type === "Income").reduce((s, r) => s + r.amount, 0);
+        const exp = userRecs.filter(r => r.type === "Expense").reduce((s, r) => s + r.amount, 0);
+        totalVolume += (inc + exp);
+        const netBal = inc - exp;
+
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td><strong>${u.username}</strong></td>
+          <td><span class="badge ${u.role === 'admin' ? 'badge-admin' : 'badge-user'}">${u.role}</span></td>
+          <td>${userRecs.length}</td>
+          <td style="font-weight: 600; color: ${netBal >= 0 ? 'var(--primary)' : 'var(--danger)'};">₹${netBal.toFixed(2)}</td>
+          <td>
+            ${u.username === 'admin' ? '<em style="color:var(--text-muted);font-size:0.8rem;">Protected</em>' : `<button class="btn-danger" style="font-size:0.75rem;padding:0.25rem 0.5rem;" onclick="adminDeleteUser('${u.username}')">Delete User</button>`}
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+
+      document.getElementById("adminTotalTx").textContent = totalTxCount;
+      document.getElementById("adminTotalVolume").textContent = `₹${totalVolume.toFixed(2)}`;
+    }
+
+    function adminDeleteUser(targetUsername) {
+      if (!confirm(`Are you sure you want to delete user "${targetUsername}" and their records?`)) return;
+      let users = JSON.parse(localStorage.getItem("bp_users")) || [];
+      users = users.filter(u => u.username !== targetUsername);
+      localStorage.setItem("bp_users", JSON.stringify(users));
+      localStorage.removeItem(`bp_records_${targetUsername}`);
+      localStorage.removeItem(`bp_goal_${targetUsername}`);
+      renderAdminDashboard();
+    }
+
+    // Initialize application
+    initSeedData();
+    navigateToModule();
   </script>
 </body>
 </html>
