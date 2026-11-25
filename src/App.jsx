@@ -12,7 +12,16 @@ export default function App() {
   useEffect(() => {
     const users = JSON.parse(localStorage.getItem("bp_users")) || [];
     if (!users.some((u) => u.username === "admin")) {
-      users.push({ username: "admin", password: "admin", role: "admin" });
+      users.push({
+        username: "admin",
+        password: "admin",
+        role: "admin",
+        fullName: "System Administrator",
+        age: "N/A",
+        jobProfile: "Platform Admin",
+        feedback: "Root administrative account.",
+        lastLogin: "Never"
+      });
       localStorage.setItem("bp_users", JSON.stringify(users));
     }
   }, []);

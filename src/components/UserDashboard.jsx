@@ -20,6 +20,11 @@ export default function UserDashboard({ session, onLogout }) {
   const [type, setType] = useState("Expense");
   const [category, setCategory] = useState(expCategories[0]);
   const [goalInput, setGoalInput] = useState("");
+  const [profile, setProfile] = useState(() => {
+    const users = JSON.parse(localStorage.getItem("bp_users")) || [];
+    return users.find((u) => u.username === session.username) || {};
+  });
+  const [profileMessage, setProfileMessage] = useState("");
 
   useEffect(() => {
     setCategory(type === "Expense" ? expCategories[0] : incCategories[0]);
@@ -56,6 +61,24 @@ export default function UserDashboard({ session, onLogout }) {
       localStorage.setItem(`bp_goal_${session.username}`, val.toString());
       setGoalInput("");
     }
+  };
+
+  const handleProfileUpdate = (e) => {
+    e.preventDefault();
+    const users = JSON.parse(localStorage.getItem("bp_users")) || [];
+    const index = users.findIndex((u) => u.username === session.username);
+    if (index === -1) return;
+    users[index] = {
+      ...users[index],
+      fullName: profile.fullName?.trim() || "",
+      age: profile.age?.toString().trim() || "",
+      jobProfile: profile.jobProfile?.trim() || "",
+      feedback: profile.feedback?.trim() || ""
+    };
+    localStorage.setItem("bp_users", JSON.stringify(users));
+    setProfile(users[index]);
+    setProfileMessage("Profile & note updated for Admin!");
+    window.setTimeout(() => setProfileMessage(""), 3000);
   };
 
   const incTotal = records.filter((r) => r.type === "Income").reduce((s, r) => s + r.amount, 0);
@@ -173,6 +196,53 @@ export default function UserDashboard({ session, onLogout }) {
                 Set
               </button>
             </div>
+          </div>
+
+          <div className="card">
+            <h2 style={{ fontSize: "1.1rem", marginBottom: "1rem" }}>Personal Profile &amp; Admin Note</h2>
+            <form onSubmit={handleProfileUpdate}>
+              <div className="form-group">
+                <label>Full Name</label>
+                <input
+                  type="text"
+                  value={profile.fullName || ""}
+                  onChange={(e) => setProfile({ ...profile, fullName: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="profile-row">
+                <div className="form-group">
+                  <label>Age</label>
+                  <input
+                    type="number"
+                    value={profile.age || ""}
+                    onChange={(e) => setProfile({ ...profile, age: e.target.value })}
+                    min="10"
+                    max="120"
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Job Profile</label>
+                  <input
+                    type="text"
+                    value={profile.jobProfile || ""}
+                    onChange={(e) => setProfile({ ...profile, jobProfile: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+              <div className="form-group">
+                <label>Note for Admin (Optional)</label>
+                <textarea
+                  value={profile.feedback || ""}
+                  onChange={(e) => setProfile({ ...profile, feedback: e.target.value })}
+                  placeholder="Write a note for admin..."
+                />
+              </div>
+              <button type="submit" className="btn-outline">Save Profile &amp; Note</button>
+              {profileMessage && <div className="success-msg">{profileMessage}</div>}
+            </form>
           </div>
         </div>
 
