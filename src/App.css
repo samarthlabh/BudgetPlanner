@@ -222,7 +222,7 @@ button.btn-admin:hover { background: var(--admin-dark); }
 
 .tx-list { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; max-height: 280px; overflow-y: auto; }
 .records-card { display: flex; flex-direction: column; min-height: 0; }
-.records-list { flex: 1; min-height: 0; max-height: none; }
+.records-list { flex: 0 1 auto; min-height: 0; max-height: 280px; }
 .records-list > li { flex: 0 0 auto; }
 .tx-item { display: flex; justify-content: space-between; align-items: center; padding: 0.7rem 0.75rem; border: 1px solid var(--border); border-radius: 8px; background: #fbfdfc; transition: border-color 160ms ease, background 160ms ease; }
 .tx-item:hover { border-color: #cbd5d1; background: #f7faf8; }
