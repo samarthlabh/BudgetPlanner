@@ -261,9 +261,9 @@ export default function UserDashboard({ session, onLogout }) {
             </div>
           </div>
 
-          <div className="card" style={{ flex: 1 }}>
+          <div className="card records-card" style={{ flex: 1 }}>
             <h2 style={{ fontSize: "1.1rem", marginBottom: "0.75rem" }}>Recent Records</h2>
-            <ul className="tx-list">
+            <ul className="tx-list records-list">
               {records.length === 0 ? (
                 <li style={{ textAlign: "center", color: "var(--text-muted)", padding: "1rem" }}>
                   No entries logged.

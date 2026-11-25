@@ -221,6 +221,9 @@ button.btn-admin:hover { background: var(--admin-dark); }
 .progress-fill { background: linear-gradient(90deg, var(--primary), #34d399); height: 100%; width: 0%; transition: width 0.35s ease; }
 
 .tx-list { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; max-height: 280px; overflow-y: auto; }
+.records-card { display: flex; flex-direction: column; min-height: 0; }
+.records-list { flex: 1; min-height: 0; max-height: none; }
+.records-list > li { flex: 0 0 auto; }
 .tx-item { display: flex; justify-content: space-between; align-items: center; padding: 0.7rem 0.75rem; border: 1px solid var(--border); border-radius: 8px; background: #fbfdfc; transition: border-color 160ms ease, background 160ms ease; }
 .tx-item:hover { border-color: #cbd5d1; background: #f7faf8; }
 .del-btn { background: none; border: none; color: var(--text-muted); font-size: 1.1rem; cursor: pointer; width: auto; }
@@ -391,4 +394,8 @@ tbody tr:hover { background: #f9fbfa; }
 @media (max-width: 420px) {
   .grid-stats { grid-template-columns: 1fr; }
   .tx-item { gap: 0.5rem; }
+}
+
+@media (max-width: 768px) {
+  .records-list { flex: initial; max-height: min(55vh, 420px); }
 }
