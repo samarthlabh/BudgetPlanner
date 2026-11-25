@@ -8,6 +8,9 @@ export default function App() {
   const [session, setSession] = useState(() => {
     return JSON.parse(localStorage.getItem("bp_session")) || null;
   });
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem("bp_theme") || "light";
+  });
 
   useEffect(() => {
     const users = JSON.parse(localStorage.getItem("bp_users")) || [];
@@ -37,13 +40,33 @@ export default function App() {
     localStorage.removeItem("bp_session");
   };
 
-  if (!session) {
-    return <Auth onLoginSuccess={handleLogin} />;
-  }
+  const toggleTheme = () => {
+    setTheme((currentTheme) => {
+      const nextTheme = currentTheme === "light" ? "dark" : "light";
+      localStorage.setItem("bp_theme", nextTheme);
+      return nextTheme;
+    });
+  };
 
-  return session.role === "admin" ? (
-    <AdminDashboard session={session} onLogout={handleLogout} />
-  ) : (
-    <UserDashboard session={session} onLogout={handleLogout} />
+  const content = !session
+    ? <Auth onLoginSuccess={handleLogin} />
+    : session.role === "admin"
+      ? <AdminDashboard session={session} onLogout={handleLogout} />
+      : <UserDashboard session={session} onLogout={handleLogout} />;
+
+  return (
+    <div className={`app-shell ${theme}`}>
+      <button
+        type="button"
+        className="theme-toggle"
+        onClick={toggleTheme}
+        aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
+        title={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
+      >
+        <span aria-hidden="true">{theme === "light" ? "🌙" : "☀️"}</span>
+        <span>{theme === "light" ? "Dark" : "Light"}</span>
+      </button>
+      {content}
+    </div>
   );
 }
